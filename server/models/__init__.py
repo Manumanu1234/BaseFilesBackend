@@ -1,0 +1,1 @@
+from .verficationpydantic import LoginDetails,RegisterDetails
