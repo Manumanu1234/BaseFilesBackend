@@ -1,4 +1,4 @@
-from db import Base
+from .dbengine import Base
 from sqlalchemy import Column,Integer,String,Boolean
 
 class User(Base):

@@ -19,6 +19,9 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 @router2.post("/register-user-normal")
 def create_user(details:RegisterDetails,auth_class:AuthService=Depends(AuthService),db_class:UserService=Depends(UserService)):
     user=db_class.get_user_by_email(email=details.email)
+    print("*"*100)
+    print(details.password)
+    print("*"*100)
     if user:
         return {"result":"user email alredy exist"}
     user_details={

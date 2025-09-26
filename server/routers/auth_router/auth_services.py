@@ -16,11 +16,12 @@ class AuthService:
         self.SECRET_KEY = os.getenv("SECRET_KEY")
         self.ALGORITHM = os.getenv("ALGORITHM")
         self.ACCESS_TOKEN_EXPIRE_MINUTES = 30
-        self.pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+        self.pwd_context = CryptContext(schemes=["bcrypt_sha256"], deprecated="auto")
         self.oauth2_scheme = OAuth2PasswordBearer(tokenUrl="normal-login")
         self.db_services=UserService(self.db)
         
     def hash_password(self, password: str) -> str:
+        print("DEBUG hashing:", password, len(password))
         return self.pwd_context.hash(password)
 
     def verify_password(self, plain_password: str, hashed_password: str) -> bool:
