@@ -1,32 +1,30 @@
-from db import Base,User
-from fastapi import Depends
 from sqlalchemy.orm import Session
+from db import User, Base,get_db
+from fastapi import Depends
 
-def check_user_google(db: Session, google_auth_details: dict):
-    db_user = db.query(User).filter(User.google_id == google_auth_details["google_id"]).first()
-    return db_user
-def check_user_google_by_id(db: Session, google_auth_id: str):
-    db_user = db.query(User).filter(User.google_id == google_auth_id).first()
-    return db_user
-def insert_new_google_user(db: Session, google_auth_details: dict):
-    new_user = User(**google_auth_details)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return True
+class UserService:
+    def __init__(self, db: Session=Depends(get_db)):
+        self.db = db
+        
+    def check_user_google(self, google_auth_details: dict):
+        return self.db.query(User).filter(User.google_id == google_auth_details["google_id"]).first()
 
+    def check_user_google_by_id(self, google_auth_id: str):
+        return self.db.query(User).filter(User.google_id == google_auth_id).first()
 
+    def insert_new_google_user(self, google_auth_details: dict) -> bool:
+        new_user = User(**google_auth_details)
+        self.db.add(new_user)
+        self.db.commit()
+        self.db.refresh(new_user)
+        return True
 
-#Normal authentication
-def get_user_by_id(db:Session,email:str):
-    db_user=db.query(User).filter(User.email==email).first()
-    return db_user
-def get_user_by_google_id(db:Session,email:str):
-    db_user=db.query(User).filter(User.email==email).first()
-    return db_user
-def create_user_normal_auth(db:Session,user_details:dict):
-    new_user=User(**user_details)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return True
+    def get_user_by_email(self, email: str):
+        return self.db.query(User).filter(User.email == email).first()
+
+    def create_user_normal_auth(self, user_details: dict) -> bool:
+        new_user = User(**user_details)
+        self.db.add(new_user)
+        self.db.commit()
+        self.db.refresh(new_user)
+        return True

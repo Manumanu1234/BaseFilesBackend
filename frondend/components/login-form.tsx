@@ -70,6 +70,7 @@ export function LoginForm() {
             router.push("/home")
         })
         .catch(function (error) {
+           toast("invalid password or username")
             console.log(error);
         });
 

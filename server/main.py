@@ -1,8 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from routers.goolge_auth import router
-from routers.normal_auth import router2
+from routers.auth_router import router,router2
 from dotenv import load_dotenv
 import os
 import uvicorn

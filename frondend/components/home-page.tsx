@@ -117,7 +117,7 @@ const isLoggingOutRef = useRef(false)
                   className="rounded-full"
                 />
               )}
-              <span className="text-sm">Welcome back!</span>
+              <span className="text-sm">Welcome {user?.name}</span>
             </div>
               <Button variant="ghost" size="sm" onClick={Logout} className="text-muted-foreground hover:text-foreground">
                 <LogOut className="w-4 h-4 mr-2" />
