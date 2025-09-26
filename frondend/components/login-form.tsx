@@ -10,17 +10,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { toast } from "sonner"
 import axios from "axios"
 import { useRouter } from "next/navigation"
+import useUserStore from "@/store/userStore"
 
 
 export function LoginForm() {
-  
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isRegisterMode, setIsRegisterMode] = useState(false)
   const [confirmPassword, setConfirmPassword] = useState("")
   const [name, setName] = useState("")
+  const setUser = useUserStore((state) => state.setUser)
   const router = useRouter()
-
+  axios.defaults.withCredentials = true;
   const handleGoogleLogin = () => {
     toast("Google authentication would be initiated here.",)
     
@@ -35,25 +36,44 @@ export function LoginForm() {
       
       if (name && email && password && password === confirmPassword) {
         // In real app, you'd register with a backend
-        axios.post('http://localhost:8000/auth/register', {
+        axios.post('http://localhost:8000/normal-auth/register-user-normal', {
             username: name,
             email: email,
             password:password
         })
         .then(function (response) {
             console.log(response);
-            toast("login sucessfully")
+            if(response.data.result=="user created sucessfully"){
+              toast("register sucessfully")
+            }else{
+              toast("user alredy exist")
+            }
+            
         })
         .catch(function (error) {
             console.log(error);
         });
 
-        router.push("/home")
+        router.push("/")
       }
     } else {
       // Login validation
       if (email && password) {
-          router.push("/home")
+        axios.post('http://localhost:8000/normal-auth/token', {
+            email: email,
+            password:password
+        },{ withCredentials: true })
+        .then(function (response) {
+            console.log(response)
+            setUser(response.data.user)
+            toast("login sucessfully")
+            router.push("/home")
+        })
+        .catch(function (error) {
+            console.log(error);
+        });
+
+        
                   
       }
     }

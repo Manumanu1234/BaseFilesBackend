@@ -1,76 +1,95 @@
 "use client"
-
-import type React from "react"
-
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent } from "@/components/ui/card"
-import { Send, User, LogOut } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useEffect, useState, useRef } from "react"
 import axios from "axios"
 import { toast } from "sonner"
-axios.defaults.withCredentials = true  
+import { useRouter } from "next/navigation"
+import useUserStore from "@/store/userStore"
+import Image from "next/image"
+import { Button } from "./ui/button"
+import { LogOut, Send, User } from "lucide-react"
+import { Card, CardContent } from "./ui/card"
+import { Input } from "./ui/input"
 
+axios.defaults.withCredentials = true
 
-export function HomePage() {
+export default function HomePage() {
+const router = useRouter()
+const isLoggingOutRef = useRef(false)
+
+  const user = useUserStore((state) => state.user)
+  const hasHydrated = useUserStore((state) => state.hasHydrated)
+  const loggingOut = useUserStore((state) => state.loggingOut)
+  const setUser = useUserStore((state) => state.setUser)
+  const clearUser = useUserStore((state) => state.clearUser)
+  const setLoggingOut = useUserStore((state) => state.setLoggingOut)
+
+  const [messages, setMessages] = useState<
+    Array<{ role: "user" | "assistant"; content: string }>
+  >([])
   const [prompt, setPrompt] = useState("")
-  const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([])
-  const [Image,setImage]=useState("")
-  const router=useRouter()
+
+  // ✅ Session check effect
   useEffect(() => {
+    if (!hasHydrated) return // wait for hydration
+
     const checkSession = async () => {
       try {
         const response = await axios.get("http://localhost:8000/auth/profile", {
-          withCredentials: true, 
+          withCredentials: true,
         })
-        if(response.data.profile=="sucess"){
+        if (response.data.profile == "success") {
           console.log(response.data.user)
-          setImage(response.data.user.profile_picture)
-          router.push("/home")
+          setUser(response.data.user)
         }
-      } catch (error) {
-        toast("not authenticated...")
-        router.push("/") // redirect to login page
+      } catch (err) {
+        // Only show toast if we're not intentionally logging out
+        if (!isLoggingOutRef.current) {
+          toast("Not authenticated...")
+          clearUser()
+          router.push("/")
+        }
       }
     }
+    
+    if (!user) {
+      checkSession()
+     console.log("calling api ")
+    }
+  }, [user, hasHydrated, setUser, clearUser, router])
 
-    checkSession()
-  }, [router])
-  const Logout=()=>{
-       axios.get("http://localhost:8000/auth/logout-google",{ withCredentials: true })
-       .then(function (response) {
-            console.log(response);
-            if(response.data.status="sucess"){
-                toast("logout sucessfully")
-                router.push("/")
-            }
-        })
-        .catch(function (error) {
-            console.log(error);
-        });
-
+  // ✅ Logout function
+  const Logout = async () => {
+    isLoggingOutRef.current = true 
+    setLoggingOut(true)
+    try {
+      const response = await axios.get("http://localhost:8000/auth/logout-google", {
+        withCredentials: true,
+      })
+      if (response.data.status === "success") {
+        clearUser()
+        toast("Logout successfully")
+        router.push("/")
+      }
+    } catch (err) {
+      console.log(err)
+      toast("Logout failed")
+    } finally {
+      setLoggingOut(false)
+      // Reset ref after a small delay to ensure all effects have settled
+      setTimeout(() => {
+        isLoggingOutRef.current = false
+      }, 100)
+    }
   }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!prompt.trim()) return
+    const newMessages = [...messages, { role: "user", content: prompt }]
 
-    // Add user message
-    const newMessages = [...messages, { role: "user" as const, content: prompt }]
-    setMessages(newMessages)
-
-    // Simulate AI response
     setTimeout(() => {
-      setMessages([
-        ...newMessages,
-        {
-          role: "assistant" as const,
-          content: "I'm here to help! How can I assist you today?",
-        },
-      ])
+      setMessages([{ role: "assistant", content: "I'm here to help! How can I assist you today?" }])
     }, 1000)
-
     setPrompt("")
   }
 
@@ -88,18 +107,19 @@ export function HomePage() {
             </div>
 
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2 text-muted-foreground">
-                {Image && (
-                  <img src={Image} alt="User Profile" className="w-8 h-8 rounded-full" />
-                )}
-                <span className="text-sm">Welcome back!</span>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={Logout}
-                className="text-muted-foreground hover:text-foreground"
-              >
+            <div className="flex items-center space-x-2 text-muted-foreground">
+              {user?.profile_picture && (
+                <Image
+                  src={user.profile_picture}
+                  alt="User Profile"
+                  width={32}
+                  height={32}
+                  className="rounded-full"
+                />
+              )}
+              <span className="text-sm">Welcome back!</span>
+            </div>
+              <Button variant="ghost" size="sm" onClick={Logout} className="text-muted-foreground hover:text-foreground">
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign out
               </Button>
